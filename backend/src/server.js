@@ -42,6 +42,21 @@ function code() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+function response(roomCode, username) {
+  const participantToken = makeToken(roomCode, username);
+
+  return {
+    ok: true,
+    roomCode,
+    code: roomCode,
+    livekitUrl: process.env.LIVEKIT_URL,
+    liveKitUrl: process.env.LIVEKIT_URL,
+    url: process.env.LIVEKIT_URL,
+    token: participantToken,
+    participantToken
+  };
+}
+
 function createRoom(username) {
   let roomCode = code();
 
@@ -51,13 +66,7 @@ function createRoom(username) {
 
   rooms.set(roomCode, { users: [username] });
 
-  return {
-    ok: true,
-    roomCode,
-    code: roomCode,
-    livekitUrl: process.env.LIVEKIT_URL,
-    token: makeToken(roomCode, username)
-  };
+  return response(roomCode, username);
 }
 
 function joinRoom(roomCode, username) {
@@ -75,13 +84,7 @@ function joinRoom(roomCode, username) {
 
   return {
     status: 200,
-    body: {
-      ok: true,
-      roomCode,
-      code: roomCode,
-      livekitUrl: process.env.LIVEKIT_URL,
-      token: makeToken(roomCode, username)
-    }
+    body: response(roomCode, username)
   };
 }
 
