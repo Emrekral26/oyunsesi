@@ -52,6 +52,7 @@ function createRoom(username) {
   rooms.set(roomCode, { users: [username] });
 
   return {
+    ok: true,
     roomCode,
     code: roomCode,
     livekitUrl: process.env.LIVEKIT_URL,
@@ -75,6 +76,7 @@ function joinRoom(roomCode, username) {
   return {
     status: 200,
     body: {
+      ok: true,
       roomCode,
       code: roomCode,
       livekitUrl: process.env.LIVEKIT_URL,
@@ -96,48 +98,68 @@ app.get("/api/health", (req, res) => {
 });
 
 app.post("/rooms", (req, res) => {
-  const username = req.body.username || "Oyuncu";
-  res.json(createRoom(username));
+  res.json(createRoom(req.body.username || "Oyuncu"));
 });
 
 app.post("/rooms/create", (req, res) => {
-  const username = req.body.username || "Oyuncu";
-  res.json(createRoom(username));
+  res.json(createRoom(req.body.username || "Oyuncu"));
 });
 
 app.post("/api/rooms", (req, res) => {
-  const username = req.body.username || "Oyuncu";
-  res.json(createRoom(username));
+  res.json(createRoom(req.body.username || "Oyuncu"));
 });
 
 app.post("/api/rooms/create", (req, res) => {
-  const username = req.body.username || "Oyuncu";
-  res.json(createRoom(username));
+  res.json(createRoom(req.body.username || "Oyuncu"));
+});
+
+app.post("/create-room", (req, res) => {
+  res.json(createRoom(req.body.username || "Oyuncu"));
+});
+
+app.post("/api/create-room", (req, res) => {
+  res.json(createRoom(req.body.username || "Oyuncu"));
+});
+
+app.post("/room/create", (req, res) => {
+  res.json(createRoom(req.body.username || "Oyuncu"));
+});
+
+app.post("/api/room/create", (req, res) => {
+  res.json(createRoom(req.body.username || "Oyuncu"));
 });
 
 app.post("/rooms/:code/join", (req, res) => {
-  const username = req.body.username || "Oyuncu";
-  const result = joinRoom(req.params.code, username);
-  res.status(result.status).json(result.body);
-});
-
-app.post("/rooms/join", (req, res) => {
-  const username = req.body.username || "Oyuncu";
-  const roomCode = req.body.code || req.body.roomCode;
-  const result = joinRoom(roomCode, username);
+  const result = joinRoom(req.params.code, req.body.username || "Oyuncu");
   res.status(result.status).json(result.body);
 });
 
 app.post("/api/rooms/:code/join", (req, res) => {
-  const username = req.body.username || "Oyuncu";
-  const result = joinRoom(req.params.code, username);
+  const result = joinRoom(req.params.code, req.body.username || "Oyuncu");
+  res.status(result.status).json(result.body);
+});
+
+app.post("/rooms/join", (req, res) => {
+  const roomCode = req.body.code || req.body.roomCode;
+  const result = joinRoom(roomCode, req.body.username || "Oyuncu");
   res.status(result.status).json(result.body);
 });
 
 app.post("/api/rooms/join", (req, res) => {
-  const username = req.body.username || "Oyuncu";
   const roomCode = req.body.code || req.body.roomCode;
-  const result = joinRoom(roomCode, username);
+  const result = joinRoom(roomCode, req.body.username || "Oyuncu");
+  res.status(result.status).json(result.body);
+});
+
+app.post("/join-room", (req, res) => {
+  const roomCode = req.body.code || req.body.roomCode;
+  const result = joinRoom(roomCode, req.body.username || "Oyuncu");
+  res.status(result.status).json(result.body);
+});
+
+app.post("/api/join-room", (req, res) => {
+  const roomCode = req.body.code || req.body.roomCode;
+  const result = joinRoom(roomCode, req.body.username || "Oyuncu");
   res.status(result.status).json(result.body);
 });
 
@@ -150,27 +172,29 @@ app.post("/rooms/:code/leave", (req, res) => {
 
   room.users = room.users.filter((user) => user !== username);
 
-  if (room.users.length === 0) {
-    rooms.delete(roomCode);
-  }
+  if (room.users.length === 0) rooms.delete(roomCode);
 
   res.json({ ok: true });
 });
 
-app.post("/api/rooms/:code/leave", (req, res) => {
-  const roomCode = req.params.code;
-  const username = req.body.username;
-  const room = rooms.get(roomCode);
+app.use((req, res) => {
+  const path = req.path.toLowerCase();
+  const username = req.body?.username || req.query?.username || "Oyuncu";
+  const roomCode = req.body?.code || req.body?.roomCode || req.query?.code || req.query?.roomCode;
 
-  if (!room) return res.json({ ok: true });
-
-  room.users = room.users.filter((user) => user !== username);
-
-  if (room.users.length === 0) {
-    rooms.delete(roomCode);
+  if (path.includes("join")) {
+    const result = joinRoom(roomCode, username);
+    return res.status(result.status).json(result.body);
   }
 
-  res.json({ ok: true });
+  if (path.includes("room") || path.includes("create")) {
+    return res.json(createRoom(username));
+  }
+
+  res.status(404).json({
+    error: "Yol bulunamadı",
+    path: req.path
+  });
 });
 
 const port = process.env.PORT || 3000;
