@@ -66,9 +66,11 @@ function makeToken(roomCode, username) {
 function getUsername(req) {
   return String(
     req.body?.username ||
+    req.body?.displayName ||
     req.body?.name ||
     req.body?.participantName ||
     req.query?.username ||
+    req.query?.displayName ||
     req.query?.name ||
     "Oyuncu"
   ).trim();
@@ -116,6 +118,7 @@ function buildResponse(roomCode, username) {
     accessToken: made.token,
     token: made.token,
 
+    participantId: made.identity,
     participantIdentity: made.identity,
     identity: made.identity,
     username
@@ -142,6 +145,7 @@ function joinRoom(req, res) {
   if (!roomCode) {
     return res.status(400).json({
       ok: false,
+      message: "Oda kodu eksik",
       error: "Oda kodu eksik"
     });
   }
@@ -149,6 +153,7 @@ function joinRoom(req, res) {
   if (!rooms.has(roomCode)) {
     return res.status(404).json({
       ok: false,
+      message: "Oda bulunamadi",
       error: "Oda bulunamadi"
     });
   }
@@ -158,6 +163,7 @@ function joinRoom(req, res) {
   if (!room.has(username) && room.size >= 4) {
     return res.status(409).json({
       ok: false,
+      message: "Oda dolu",
       error: "Oda dolu"
     });
   }
@@ -201,7 +207,8 @@ const createRoutes = [
   "/api/room/create",
   "/api/rooms/create",
   "/rooms",
-  "/api/rooms"
+  "/api/rooms",
+  "/v1/rooms"
 ];
 
 const joinRoutes = [
@@ -241,16 +248,23 @@ for (const route of tokenRoutes) {
 
 app.get("/rooms/:code/join", joinRoom);
 app.post("/rooms/:code/join", joinRoom);
+
 app.get("/api/rooms/:code/join", joinRoom);
 app.post("/api/rooms/:code/join", joinRoom);
+
+app.get("/v1/rooms/:code/join", joinRoom);
+app.post("/v1/rooms/:code/join", joinRoom);
+
 app.get("/join/:code", joinRoom);
 app.post("/join/:code", joinRoom);
+
 app.get("/api/join/:code", joinRoom);
 app.post("/api/join/:code", joinRoom);
 
 app.use((req, res) => {
   res.status(404).json({
     ok: false,
+    message: "Route bulunamadi",
     error: "Route bulunamadi",
     path: req.path
   });
@@ -259,6 +273,7 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   res.status(500).json({
     ok: false,
+    message: err.message,
     error: err.message
   });
 });
